@@ -8,22 +8,30 @@
 const fs = require('fs');
 const path = require('path');
 
-// --- Load all client configs at cold start ---
-// Each client is a JSON file in /clients/<clientId>.json
-const CLIENTS_DIR = path.join(__dirname, '..', '..', 'clients');
+// --- Resolve the clients/ directory ---
+// On Netlify, included_files are bundled into the function and live at
+// LAMBDA_TASK_ROOT. Locally, they live two directories up from __dirname.
+function resolveClientsDir() {
+  const candidates = [
+    process.env.LAMBDA_TASK_ROOT && path.join(process.env.LAMBDA_TASK_ROOT, 'clients'),
+    path.join(process.cwd(), 'clients'),
+    path.join(__dirname, '..', '..', 'clients'),
+    path.join(__dirname, 'clients')
+  ].filter(Boolean);
+  for (const dir of candidates) {
+    try { if (fs.existsSync(dir)) return dir; } catch (_) {}
+  }
+  return candidates[0];
+}
+const CLIENTS_DIR = resolveClientsDir();
 
 function loadClient(clientId) {
-  // Basic sanitization — clientId must be alphanumeric + dashes only.
   if (!/^[a-z0-9-]{1,64}$/i.test(clientId)) return null;
   const file = path.join(CLIENTS_DIR, `${clientId}.json`);
-  if (!fs.existsSync(file)) return null;
-  try {
-    return JSON.parse(fs.readFileSync(file, 'utf8'));
-  } catch (e) {
-    console.error(`Failed to parse client config ${clientId}:`, e);
+  if (!fs.existsSync(file)) {
+    console.error(`Client file not found: ${file}`);
     return null;
   }
-}
 
 // --- CORS helpers ---
 function corsHeaders(origin, allowedDomains) {

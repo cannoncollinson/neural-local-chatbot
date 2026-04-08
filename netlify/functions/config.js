@@ -6,7 +6,19 @@
 const fs = require('fs');
 const path = require('path');
 
-const CLIENTS_DIR = path.join(__dirname, '..', '..', 'clients');
+function resolveClientsDir() {
+  const candidates = [
+    process.env.LAMBDA_TASK_ROOT && path.join(process.env.LAMBDA_TASK_ROOT, 'clients'),
+    path.join(process.cwd(), 'clients'),
+    path.join(__dirname, '..', '..', 'clients'),
+    path.join(__dirname, 'clients')
+  ].filter(Boolean);
+  for (const dir of candidates) {
+    try { if (fs.existsSync(dir)) return dir; } catch (_) {}
+  }
+  return candidates[0];
+}
+const CLIENTS_DIR = resolveClientsDir();
 
 exports.handler = async function(event) {
   const headers = {

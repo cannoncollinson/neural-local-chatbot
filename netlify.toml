@@ -2,6 +2,11 @@
   publish = "public"
   functions = "netlify/functions"
 
+# Bundle the clients/*.json files into every serverless function so
+# chat.js and config.js can read them at runtime on Netlify's Lambda.
+[functions]
+  included_files = ["clients/**"]
+
 # Allow the embed script and config endpoint to be loaded cross-origin
 # (clients will embed from their own domains).
 [[headers]]
