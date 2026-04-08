@@ -11,6 +11,7 @@ const path = require('path');
 // --- Resolve the clients/ directory ---
 // On Netlify, included_files are bundled into the function and live at
 // LAMBDA_TASK_ROOT. Locally, they live two directories up from __dirname.
+// We try a few candidate paths so this works in every environment.
 function resolveClientsDir() {
   const candidates = [
     process.env.LAMBDA_TASK_ROOT && path.join(process.env.LAMBDA_TASK_ROOT, 'clients'),
@@ -26,12 +27,20 @@ function resolveClientsDir() {
 const CLIENTS_DIR = resolveClientsDir();
 
 function loadClient(clientId) {
+  // Basic sanitization — clientId must be alphanumeric + dashes only.
   if (!/^[a-z0-9-]{1,64}$/i.test(clientId)) return null;
   const file = path.join(CLIENTS_DIR, `${clientId}.json`);
   if (!fs.existsSync(file)) {
     console.error(`Client file not found: ${file}`);
     return null;
   }
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch (e) {
+    console.error(`Failed to parse client config ${clientId}:`, e);
+    return null;
+  }
+}
 
 // --- CORS helpers ---
 function corsHeaders(origin, allowedDomains) {
