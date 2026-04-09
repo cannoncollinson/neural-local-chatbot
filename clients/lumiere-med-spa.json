@@ -1,9 +1,10 @@
 {
-  "businessName": "Lumière Med Spa",
-  "assistantName": "Aria",
+  "businessName": "CLIENT BUSINESS NAME",
+  "assistantName": "AssistantName",
   "avatarLetter": "A",
-  "greeting": "Hi! I'm Aria, your Lumière Med Spa assistant. Are you looking to book a treatment or have questions about our services?",
-  "placeholder": "Ask about services, pricing, availability…",
+  "greeting": "Hi! I'm your assistant. How can I help you today?",
+  "placeholder": "Type your question…",
+  "position": "bottom-left",
   "theme": {
     "primary": "#1a1a1a",
     "accent": "#c9a97a"
