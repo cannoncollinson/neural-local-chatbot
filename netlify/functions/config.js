@@ -47,6 +47,7 @@ exports.handler = async function(event) {
       avatarLetter: raw.avatarLetter || (raw.assistantName || 'A')[0].toUpperCase(),
       greeting: raw.greeting || `Hi! How can I help you today?`,
       placeholder: raw.placeholder || 'Type a message…',
+      position: raw.position || 'bottom-right',
       theme: raw.theme || {}
     };
     return { statusCode: 200, headers, body: JSON.stringify(publicConfig) };

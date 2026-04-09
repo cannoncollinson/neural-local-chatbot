@@ -4,6 +4,7 @@
   "avatarLetter": "A",
   "greeting": "Hi! I'm your assistant. How can I help you today?",
   "placeholder": "Type your question…",
+  "position": "bottom-right",
   "theme": {
     "primary": "#1a1a1a",
     "accent": "#c9a97a"

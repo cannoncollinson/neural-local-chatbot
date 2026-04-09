@@ -108,28 +108,57 @@
     });
   }
 
-  function applyTheme(theme) {
-    if (!theme) return;
-    // Allow client configs to override key colors via a small style patch.
-    var overrides = [];
-    if (theme.primary) {
-      overrides.push('.nl-toggle,.nl-header,.nl-powered,.nl-msg.nl-user,.nl-send{background:' + theme.primary + ' !important}');
-    }
-    if (theme.accent) {
-      overrides.push('.nl-avatar{background:' + theme.accent + ' !important}');
-      overrides.push('.nl-msg a{color:' + theme.accent + ' !important}');
-      overrides.push('.nl-input:focus{border-color:' + theme.accent + ' !important}');
-    }
-    if (overrides.length) {
-      var s = document.createElement('style');
-      s.setAttribute('data-neural-local-theme', '');
-      s.textContent = overrides.join('\n');
-      document.head.appendChild(s);
-    }
+  function applyCustomizations(cfg) {
+  var overrides = [];
+  var theme = cfg.theme || {};
+
+  // Colors
+  if (theme.primary) {
+    overrides.push('.nl-toggle,.nl-header,.nl-powered,.nl-msg.nl-user,.nl-send{background:' + theme.primary + ' !important}');
+  }
+  if (theme.accent) {
+    overrides.push('.nl-avatar{background:' + theme.accent + ' !important}');
+    overrides.push('.nl-msg a{color:' + theme.accent + ' !important}');
+    overrides.push('.nl-input:focus{border-color:' + theme.accent + ' !important}');
   }
 
+  // Position — which corner of the screen the widget sits in.
+  // Accepts "bottom-right" (default), "bottom-left", "top-right", "top-left".
+  var position = (cfg.position || 'bottom-right').toLowerCase();
+  var positions = {
+    'bottom-right': { bottom: '24px', right: '24px', top: 'auto', left: 'auto' },
+    'bottom-left':  { bottom: '24px', left: '24px',  top: 'auto', right: 'auto' },
+    'top-right':    { top: '24px',    right: '24px', bottom: 'auto', left: 'auto' },
+    'top-left':     { top: '24px',    left: '24px',  bottom: 'auto', right: 'auto' }
+  };
+  var pos = positions[position] || positions['bottom-right'];
+  var posRule =
+    'top:' + pos.top + ' !important;' +
+    'right:' + pos.right + ' !important;' +
+    'bottom:' + pos.bottom + ' !important;' +
+    'left:' + pos.left + ' !important;';
+  overrides.push('.nl-toggle{' + posRule + '}');
+  overrides.push('.nl-wrap{' + posRule + '}');
+
+  // Mobile breakpoint — keep the widget pinned to the same corner but
+  // with tighter edge spacing so it doesn't crowd the viewport.
+  var mobilePos =
+    'top:' + (pos.top === 'auto' ? 'auto' : '12px') + ' !important;' +
+    'right:' + (pos.right === 'auto' ? 'auto' : '12px') + ' !important;' +
+    'bottom:' + (pos.bottom === 'auto' ? 'auto' : '12px') + ' !important;' +
+    'left:' + (pos.left === 'auto' ? 'auto' : '12px') + ' !important;';
+  overrides.push('@media (max-width:480px){.nl-toggle{' + mobilePos + '}.nl-wrap{' + mobilePos + ';width:calc(100vw - 24px);height:calc(100vh - 24px)}}');
+
+  if (overrides.length) {
+    var s = document.createElement('style');
+    s.setAttribute('data-neural-local-theme', '');
+    s.textContent = overrides.join('\n');
+    document.head.appendChild(s);
+  }
+}
+
   function mountWidget(cfg) {
-    applyTheme(cfg.theme);
+    applyCustomizations(cfg);
 
     // --- Build DOM ---
     var toggle = document.createElement('button');
