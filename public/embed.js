@@ -199,14 +199,36 @@
 
     var messages = [];
     var leadCaptured = false;
+    var leadSaved = false;
     var isTyping = false;
     var chatOpened = false;
+    var sessionId = 'nl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+    var startTime = null;
+
+    // Fire-and-forget: send conversation to save-lead endpoint
+    function saveLead() {
+      if (leadSaved) return;
+      leadSaved = true;
+      try {
+        fetch(apiBase + '/.netlify/functions/save-lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clientId: clientId,
+            messages: messages,
+            sessionId: sessionId,
+            startTime: startTime
+          })
+        }).catch(function () { /* silent — never disrupt the visitor */ });
+      } catch (_) {}
+    }
 
     function openChat() {
       wrap.classList.remove('nl-hidden');
       toggle.style.display = 'none';
       if (!chatOpened) {
         chatOpened = true;
+        startTime = new Date().toISOString();
         setTimeout(function () {
           addMessage('bot', cfg.greeting);
           messages.push({ role: 'assistant', content: cfg.greeting });
@@ -241,6 +263,7 @@
         tag.className = 'nl-lead-tag';
         tag.textContent = '✓ Lead captured';
         msgContainer.appendChild(tag);
+        saveLead();
       }
       msgContainer.scrollTop = msgContainer.scrollHeight;
     }
