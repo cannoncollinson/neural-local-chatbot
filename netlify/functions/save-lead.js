@@ -1,10 +1,12 @@
 // netlify/functions/save-lead.js
 //
-// When the chatbot captures a lead (name + email/phone), the embed widget
-// POSTs the conversation here. This function:
+// When the chatbot captures a lead, the embed widget POSTs the conversation
+// here. This function:
 //   1. Validates the client and origin
-//   2. Uses Claude to extract structured fields matching the chat_logs sheet
+//   2. Uses Claude to extract structured fields matching the activity_log sheet
 //   3. Sends the structured data to the client's Make.com webhook
+//
+// The payload maps directly to the activity_log columns in Data_V3.
 //
 // Required env vars:
 //   ANTHROPIC_API_KEY — already set for chat.js
@@ -59,8 +61,8 @@ function corsHeaders(origin, allowedDomains) {
   };
 }
 
-// ── Extract chat log fields from conversation using Claude ───────────
-async function extractChatLog(messages) {
+// ── Extract all applicable fields from conversation using Claude ─────
+async function extractFromConversation(messages) {
   const conversationText = messages
     .map(m => `${m.role === 'user' ? 'CUSTOMER' : 'ASSISTANT'}: ${m.content}`)
     .join('\n');
@@ -74,14 +76,22 @@ async function extractChatLog(messages) {
     },
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 400,
-      system: `Extract customer data from this chatbot conversation. Return ONLY valid JSON with these fields:
-- "customer_name": customer's full name (string or null)
-- "customer_phone": customer's phone number in E.164 format like +18015551234 (string or null)
-- "customer_email": customer's email (string or null)
-- "intent_detected": one of: booking / pricing / faq / complaint / general
-- "lead_captured": one of: yes / partial / no — "yes" if name + phone or email, "partial" if only name or only contact info, "no" if neither
-- "escalated": "yes" if the bot said it would have a staff member follow up, otherwise "no"
+      max_tokens: 600,
+      system: `You are a data extraction assistant. Extract customer data from this chatbot conversation. Return ONLY valid JSON with these fields:
+
+- "recipient_name": customer's full name (string or null)
+- "recipient_phone": customer's phone number in E.164 format like +18015551234. If they give a number like 4356311199 assume US +1 prefix. (string or null)
+- "recipient_email": customer's email address (string or null)
+- "intent": one of: booking / pricing / faq / complaint / general
+- "service": which specific service they asked about, e.g. "Mow/Trim/Edge", "Aeration", "Fertilizer", "Thatching", "Landscaping", "Mulching/Bed work" — use the closest match (string or null)
+- "summary": 2-3 sentence summary of the conversation — what the customer wanted, what info they provided, and what the bot did
+- "lead_captured": one of: yes / partial / no — "yes" if name + phone or email were provided, "partial" if only name or only contact info, "no" if neither
+- "escalated": "yes" if the bot said it would have a staff member or owner follow up, otherwise "no"
+- "outcome": one of: booked / no_response / lost — use "booked" if customer expressed clear intent to proceed or was handed off for a quote, "lost" if they declined, "no_response" if unclear
+- "faq_questions": array of any questions the customer asked that the bot could NOT answer or said it would need to check on (array of strings, or empty array)
+- "address": customer's property address if mentioned (string or null)
+- "yard_size": if mentioned — small/medium/large (string or null)
+- "special_notes": any specific concerns or details about the property the customer mentioned — gate codes, dogs, slopes, overgrown, preferred schedule days, etc. (string or null)
 
 Return raw JSON only. No markdown, no backticks, no explanation.`,
       messages: [{ role: 'user', content: conversationText }]
@@ -150,7 +160,6 @@ exports.handler = async function (event) {
     }
   }
 
-  // Use client-specific webhook, or fall back to global default
   const webhookUrl = client.webhookUrl || process.env.DEFAULT_WEBHOOK_URL;
   if (!webhookUrl) {
     console.error(`Client ${clientId} has no webhookUrl and no DEFAULT_WEBHOOK_URL set.`);
@@ -158,35 +167,59 @@ exports.handler = async function (event) {
   }
 
   try {
-    // Step 1: Extract structured fields from conversation
-    const extracted = await extractChatLog(messages);
+    // Step 1: Extract all fields from conversation
+    const ex = await extractFromConversation(messages);
 
-    // Step 2: Build payload matching chat_logs sheet columns
+    // Step 2: Build payload matching activity_log sheet columns
     const now = new Date().toISOString();
-    const chatLogPayload = {
+    const durationSec = startTime ? Math.round((Date.now() - new Date(startTime).getTime()) / 1000) : null;
+
+    const activityPayload = {
+      // ── activity_log columns ──
       timestamp: startTime || now,
+      client_id: clientId,
+      agent: '01',
+      event_type: 'lead_captured',
+      recipient_phone: ex.recipient_phone || '',
+      recipient_email: ex.recipient_email || '',
+      recipient_name: ex.recipient_name || '',
+      message_body: ex.summary || '',
+      status: 'delivered',
+      source: 'chatbot_webhook',
+      claude_used: 'yes',
+      notes: [
+        ex.special_notes || '',
+        ex.address ? 'Address: ' + ex.address : '',
+        ex.yard_size ? 'Yard size: ' + ex.yard_size : '',
+        (ex.faq_questions && ex.faq_questions.length > 0) ? 'Unanswered FAQs: ' + ex.faq_questions.join('; ') : ''
+      ].filter(Boolean).join(' | ') || '',
+      outcome: ex.outcome || 'no_response',
+      revenue: null,
+      intent: ex.intent || 'general',
+      service: ex.service || '',
+      response_time_sec: durationSec,
+      star_rating: null,
+      sequence_info: null,
+      platform: 'website',
+
+      // ── extra fields for Make.com routing & storage ──
       session_id: sessionId || 'nl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
-      customer_name: extracted.customer_name || '',
-      customer_phone: extracted.customer_phone || '',
-      customer_email: extracted.customer_email || '',
       conversation_json: JSON.stringify(messages),
       message_count: messages.length,
-      intent_detected: extracted.intent_detected || 'general',
-      lead_captured: extracted.lead_captured || 'no',
-      escalated: extracted.escalated || 'no',
-      duration_sec: startTime ? Math.round((Date.now() - new Date(startTime).getTime()) / 1000) : null,
-      // Extra: for Make.com routing if using one webhook for all clients
-      clientId,
-      businessName: client.businessName || ''
+      lead_captured: ex.lead_captured || 'no',
+      escalated: ex.escalated || 'no',
+      duration_sec: durationSec,
+      faq_questions: ex.faq_questions || [],
+      address: ex.address || '',
+      yard_size: ex.yard_size || ''
     };
 
     // Step 3: Send to Make.com webhook
-    await sendToWebhook(webhookUrl, chatLogPayload);
+    await sendToWebhook(webhookUrl, activityPayload);
 
     return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
   } catch (e) {
     console.error('save-lead error:', e);
-    // Return 200 anyway — never disrupt the visitor's chat experience
     return { statusCode: 200, headers, body: JSON.stringify({ ok: false, error: 'Lead save failed (logged)' }) };
   }
 };

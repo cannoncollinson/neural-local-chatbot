@@ -180,7 +180,7 @@
         '<div class="nl-status-dot"></div>' +
         '<button class="nl-close" aria-label="Close chat">✕</button>' +
       '</div>' +
-      '<div class="nl-powered">Powered by Neural Local AI</div>' +
+      '<div class="nl-powered">Powered by Delegra.io</div>' +
       '<div class="nl-messages"></div>' +
       '<div class="nl-input-area">' +
         '<textarea class="nl-input" rows="1" placeholder="' + escapeHtml(cfg.placeholder) + '"></textarea>' +
