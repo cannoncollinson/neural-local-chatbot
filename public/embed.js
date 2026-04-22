@@ -84,7 +84,7 @@
     '.nl-send:disabled{opacity:.3;cursor:default}',
     '.nl-send svg{width:14px;height:14px;fill:#f5f0e8}',
     '.nl-msg a{color:#c9a97a;text-decoration:underline}',
-    '@media (max-width:480px){.nl-wrap{width:100vw;height:75vh;height:75dvh;max-height:75vh;max-height:75dvh;right:0;left:0;bottom:0;border-radius:20px 20px 0 0;box-shadow:0 -4px 24px rgba(0,0,0,0.15);overscroll-behavior:contain}.nl-wrap.nl-hidden{transform:translateY(100%)}.nl-toggle{right:16px;bottom:16px}.nl-messages{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}.nl-input{font-size:16px !important}.nl-input-area{padding-bottom:max(10px,env(safe-area-inset-bottom))}}'
+    '@media (max-width:480px){.nl-wrap{width:100vw;height:55vh;height:55dvh;max-height:55vh;max-height:55dvh;top:0;right:0;left:0;bottom:auto;border-radius:0 0 20px 20px;box-shadow:0 4px 24px rgba(0,0,0,0.15);overscroll-behavior:contain}.nl-wrap.nl-hidden{transform:translateY(-100%)}.nl-toggle{right:16px;bottom:16px}.nl-messages{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}.nl-input{font-size:16px !important}.nl-input-area{padding-bottom:max(10px,env(safe-area-inset-bottom))}body.nl-body-locked{overflow:hidden !important;position:fixed !important;width:100% !important}}'
   ].join('\n');
 
   var styleEl = document.createElement('style');
@@ -159,7 +159,7 @@
   overrides.push(
     '@media (max-width:480px){' +
       '.nl-toggle{' + mobileTogglePos + '}' +
-      '.nl-wrap{top:auto !important;right:0 !important;bottom:0 !important;left:0 !important;width:100vw !important;height:75vh !important;height:75dvh !important;max-height:75vh !important;max-height:75dvh !important;border-radius:20px 20px 0 0 !important}' +
+      '.nl-wrap{top:0 !important;right:0 !important;bottom:auto !important;left:0 !important;width:100vw !important;height:55vh !important;height:55dvh !important;max-height:55vh !important;max-height:55dvh !important;border-radius:0 0 20px 20px !important}' +
     '}'
   );
 
@@ -206,29 +206,39 @@
     document.body.appendChild(toggle);
     document.body.appendChild(wrap);
 
-    // --- Mobile keyboard handling ---
-    // When the on-screen keyboard opens on iOS/Android, the visual viewport
-    // shrinks but the layout viewport doesn't — which leaves the input
-    // hidden behind the keyboard. We listen for visual viewport changes and
-    // resize the drawer to fit the visible area.
+    // --- Mobile keyboard handling + background scroll lock ---
+    // The drawer is anchored to the top of the screen. When the keyboard
+    // opens, we resize the drawer so its bottom edge sits just above the
+    // keyboard — keeping the input field visible. We also lock the underlying
+    // page so it doesn't scroll when the user swipes inside the chat.
+    var savedScrollY = 0;
     function isMobileViewport() {
       return window.matchMedia && window.matchMedia('(max-width:480px)').matches;
     }
     function updateMobileHeight() {
-      if (!isMobileViewport()) {
+      if (!isMobileViewport() || wrap.classList.contains('nl-hidden')) {
         wrap.style.height = '';
         return;
       }
       var vv = window.visualViewport;
       if (vv) {
-        // Fit the drawer within the currently visible portion of the screen,
-        // capped at 75% so the underlying page is still peekable.
+        // Fit the drawer to either 55% of the visible area (keyboard closed)
+        // or the full visible area (keyboard open, so input stays above it).
         var visible = vv.height;
-        var desired = Math.min(visible * 0.75, visible - 0);
-        // When the keyboard is open, use the full visible area minus a small gap.
         var keyboardOpen = (window.innerHeight - visible) > 150;
-        wrap.style.height = (keyboardOpen ? visible : desired) + 'px';
+        wrap.style.height = (keyboardOpen ? visible : visible * 0.55) + 'px';
       }
+    }
+    function lockBodyScroll() {
+      if (!isMobileViewport()) return;
+      savedScrollY = window.scrollY || window.pageYOffset || 0;
+      document.body.style.top = '-' + savedScrollY + 'px';
+      document.body.classList.add('nl-body-locked');
+    }
+    function unlockBodyScroll() {
+      document.body.classList.remove('nl-body-locked');
+      document.body.style.top = '';
+      window.scrollTo(0, savedScrollY);
     }
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', updateMobileHeight);
@@ -334,6 +344,7 @@
     function openChat() {
       wrap.classList.remove('nl-hidden');
       toggle.style.display = 'none';
+      lockBodyScroll();
       updateMobileHeight();
       if (!chatOpened) {
         chatOpened = true;
@@ -350,6 +361,7 @@
       wrap.classList.add('nl-hidden');
       toggle.style.display = 'flex';
       wrap.style.height = '';
+      unlockBodyScroll();
     }
 
     function addMessage(role, text) {
