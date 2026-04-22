@@ -50,11 +50,11 @@
     '.nl-toggle::before{content:"";position:absolute;inset:0;border-radius:50%;background:inherit;opacity:0;z-index:-1;pointer-events:none}',
     '.nl-toggle.nl-pulsing::before{animation:nlPulseRing 1.5s ease-out infinite}',
     '@keyframes nlPulseRing{0%{transform:scale(1);opacity:0.6}100%{transform:scale(1.6);opacity:0}}',
-    '.nl-greeting{position:fixed;bottom:36px;right:108px;background:#fff;color:#1a1a1a;padding:10px 14px;border-radius:18px 18px 4px 18px;font-size:13.5px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:2147483645;display:flex;align-items:center;gap:8px;white-space:nowrap;opacity:0;transform:translateY(6px);pointer-events:auto;transition:opacity .25s ease,transform .25s ease;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;cursor:pointer;border:0.5px solid #e8e3da}',
+    '.nl-greeting{position:fixed;bottom:108px;right:24px;background:#fff;color:#1a1a1a;padding:10px 14px;border-radius:18px 18px 18px 4px;font-size:13.5px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:2147483645;display:flex;align-items:center;gap:8px;white-space:nowrap;opacity:0;transform:translateY(-6px);pointer-events:auto;transition:opacity .25s ease,transform .25s ease;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;cursor:pointer;border:0.5px solid #e8e3da}',
     '.nl-greeting.nl-greeting-visible{opacity:1;transform:translateY(0)}',
     '.nl-greeting-close{background:none;border:none;color:#999;cursor:pointer;font-size:16px;line-height:1;padding:0 0 0 4px;margin-left:2px}',
     '.nl-greeting-close:hover{color:#1a1a1a}',
-    '@media (max-width:480px){.nl-greeting{bottom:28px;right:100px;font-size:13px;padding:9px 12px}}',
+    '@media (max-width:480px){.nl-greeting{bottom:92px;right:16px;font-size:13px;padding:9px 12px}}',
     '.nl-wrap{position:fixed;bottom:24px;right:24px;width:380px;height:560px;max-height:calc(100vh - 48px);border-radius:16px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.18);display:flex;flex-direction:column;background:#fff;z-index:2147483647;transition:opacity .2s,transform .2s}',
     '.nl-wrap.nl-hidden{opacity:0;pointer-events:none;transform:translateY(12px)}',
     '.nl-header{padding:14px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;background:#1a1a1a;color:#f5f0e8}',
@@ -229,7 +229,8 @@
     });
 
     // --- Pulse cycle: 5s pulse, 20s pause, repeat until user interacts ---
-    // Greeting bubble appears only on the FIRST pulse, then never again.
+    // Greeting bubble appears on the FIRST pulse and stays until the user
+    // dismisses it (✕) or opens the chat — it does NOT auto-hide.
     var pulseStopped = false;
     var pulseStopTimeout;
     var pulseInterval;
@@ -249,7 +250,6 @@
 
       pulseStopTimeout = setTimeout(function () {
         toggle.classList.remove('nl-pulsing');
-        hideGreeting();
       }, 5000);
     }
     function stopPulsingForever() {
