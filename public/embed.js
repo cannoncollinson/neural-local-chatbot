@@ -84,7 +84,7 @@
     '.nl-send:disabled{opacity:.3;cursor:default}',
     '.nl-send svg{width:14px;height:14px;fill:#f5f0e8}',
     '.nl-msg a{color:#c9a97a;text-decoration:underline}',
-    '@media (max-width:480px){.nl-wrap{width:100vw;height:75vh;height:75dvh;max-height:75vh;max-height:75dvh;right:0;left:0;bottom:0;border-radius:20px 20px 0 0;box-shadow:0 -4px 24px rgba(0,0,0,0.15)}.nl-wrap.nl-hidden{transform:translateY(100%)}.nl-toggle{right:16px;bottom:16px}.nl-messages{-webkit-overflow-scrolling:touch}.nl-input-area{padding-bottom:max(10px,env(safe-area-inset-bottom))}}'
+    '@media (max-width:480px){.nl-wrap{width:100vw;height:75vh;height:75dvh;max-height:75vh;max-height:75dvh;right:0;left:0;bottom:0;border-radius:20px 20px 0 0;box-shadow:0 -4px 24px rgba(0,0,0,0.15);overscroll-behavior:contain}.nl-wrap.nl-hidden{transform:translateY(100%)}.nl-toggle{right:16px;bottom:16px}.nl-messages{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}.nl-input{font-size:16px !important}.nl-input-area{padding-bottom:max(10px,env(safe-area-inset-bottom))}}'
   ].join('\n');
 
   var styleEl = document.createElement('style');
@@ -197,7 +197,7 @@
       '<div class="nl-powered">Powered by Delegra.io</div>' +
       '<div class="nl-messages"></div>' +
       '<div class="nl-input-area">' +
-        '<textarea class="nl-input" rows="1" placeholder="' + escapeHtml(cfg.placeholder) + '"></textarea>' +
+        '<textarea class="nl-input" rows="1" enterkeyhint="send" placeholder="' + escapeHtml(cfg.placeholder) + '"></textarea>' +
         '<button class="nl-send" aria-label="Send">' +
           '<svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>' +
         '</button>' +
