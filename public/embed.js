@@ -84,7 +84,7 @@
     '.nl-send:disabled{opacity:.3;cursor:default}',
     '.nl-send svg{width:14px;height:14px;fill:#f5f0e8}',
     '.nl-msg a{color:#c9a97a;text-decoration:underline}',
-    '@media (max-width:480px){.nl-wrap{width:calc(100vw - 24px);right:12px;bottom:12px;height:calc(100vh - 24px)}.nl-toggle{right:16px;bottom:16px}}'
+    '@media (max-width:480px){.nl-wrap{width:100vw;height:75vh;max-height:75vh;right:0;left:0;bottom:0;border-radius:20px 20px 0 0;box-shadow:0 -4px 24px rgba(0,0,0,0.15)}.nl-wrap.nl-hidden{transform:translateY(100%)}.nl-toggle{right:16px;bottom:16px}}'
   ].join('\n');
 
   var styleEl = document.createElement('style');
@@ -148,14 +148,20 @@
   overrides.push('.nl-toggle{' + posRule + '}');
   overrides.push('.nl-wrap{' + posRule + '}');
 
-  // Mobile breakpoint — keep the widget pinned to the same corner but
-  // with tighter edge spacing so it doesn't crowd the viewport.
-  var mobilePos =
+  // Mobile breakpoint — the toggle button still respects the client's chosen
+  // corner, but the chat window becomes a bottom-anchored drawer regardless
+  // of position (full-width, 75% height, slides up from below).
+  var mobileTogglePos =
     'top:' + (pos.top === 'auto' ? 'auto' : '12px') + ' !important;' +
     'right:' + (pos.right === 'auto' ? 'auto' : '12px') + ' !important;' +
     'bottom:' + (pos.bottom === 'auto' ? 'auto' : '12px') + ' !important;' +
     'left:' + (pos.left === 'auto' ? 'auto' : '12px') + ' !important;';
-  overrides.push('@media (max-width:480px){.nl-toggle{' + mobilePos + '}.nl-wrap{' + mobilePos + ';width:calc(100vw - 24px);height:calc(100vh - 24px)}}');
+  overrides.push(
+    '@media (max-width:480px){' +
+      '.nl-toggle{' + mobileTogglePos + '}' +
+      '.nl-wrap{top:auto !important;right:0 !important;bottom:0 !important;left:0 !important;width:100vw !important;height:75vh !important;max-height:75vh !important;border-radius:20px 20px 0 0 !important}' +
+    '}'
+  );
 
   if (overrides.length) {
     var s = document.createElement('style');
