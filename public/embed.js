@@ -50,7 +50,7 @@
     '.nl-toggle::before{content:"";position:absolute;inset:0;border-radius:50%;background:inherit;opacity:0;z-index:-1;pointer-events:none}',
     '.nl-toggle.nl-pulsing::before{animation:nlPulseRing 1.5s ease-out infinite}',
     '@keyframes nlPulseRing{0%{transform:scale(1);opacity:0.6}100%{transform:scale(1.6);opacity:0}}',
-    '.nl-greeting{position:fixed;bottom:108px;right:24px;background:#fff;color:#1a1a1a;padding:10px 14px;border-radius:18px 18px 18px 4px;font-size:13.5px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:2147483645;display:flex;align-items:center;gap:8px;white-space:nowrap;opacity:0;transform:translateY(-6px);pointer-events:auto;transition:opacity .25s ease,transform .25s ease;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;cursor:pointer;border:0.5px solid #e8e3da}',
+    '.nl-greeting{position:fixed;bottom:108px;right:24px;background:#fff;color:#1a1a1a;padding:10px 14px;border-radius:18px 18px 4px 18px;font-size:13.5px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:2147483645;display:flex;align-items:center;gap:8px;white-space:nowrap;opacity:0;transform:translateY(-6px);pointer-events:auto;transition:opacity .25s ease,transform .25s ease;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;cursor:pointer;border:0.5px solid #e8e3da}',
     '.nl-greeting.nl-greeting-visible{opacity:1;transform:translateY(0)}',
     '.nl-greeting-close{background:none;border:none;color:#999;cursor:pointer;font-size:16px;line-height:1;padding:0 0 0 4px;margin-left:2px}',
     '.nl-greeting-close:hover{color:#1a1a1a}',
