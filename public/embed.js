@@ -84,7 +84,7 @@
     '.nl-send:disabled{opacity:.3;cursor:default}',
     '.nl-send svg{width:14px;height:14px;fill:#f5f0e8}',
     '.nl-msg a{color:#c9a97a;text-decoration:underline}',
-    '@media (max-width:480px){.nl-wrap{width:100vw;height:75vh;max-height:75vh;right:0;left:0;bottom:0;border-radius:20px 20px 0 0;box-shadow:0 -4px 24px rgba(0,0,0,0.15)}.nl-wrap.nl-hidden{transform:translateY(100%)}.nl-toggle{right:16px;bottom:16px}}'
+    '@media (max-width:480px){.nl-wrap{width:100vw;height:75vh;height:75dvh;max-height:75vh;max-height:75dvh;right:0;left:0;bottom:0;border-radius:20px 20px 0 0;box-shadow:0 -4px 24px rgba(0,0,0,0.15)}.nl-wrap.nl-hidden{transform:translateY(100%)}.nl-toggle{right:16px;bottom:16px}.nl-messages{-webkit-overflow-scrolling:touch}.nl-input-area{padding-bottom:max(10px,env(safe-area-inset-bottom))}}'
   ].join('\n');
 
   var styleEl = document.createElement('style');
@@ -159,7 +159,7 @@
   overrides.push(
     '@media (max-width:480px){' +
       '.nl-toggle{' + mobileTogglePos + '}' +
-      '.nl-wrap{top:auto !important;right:0 !important;bottom:0 !important;left:0 !important;width:100vw !important;height:75vh !important;max-height:75vh !important;border-radius:20px 20px 0 0 !important}' +
+      '.nl-wrap{top:auto !important;right:0 !important;bottom:0 !important;left:0 !important;width:100vw !important;height:75vh !important;height:75dvh !important;max-height:75vh !important;max-height:75dvh !important;border-radius:20px 20px 0 0 !important}' +
     '}'
   );
 
@@ -205,6 +205,36 @@
 
     document.body.appendChild(toggle);
     document.body.appendChild(wrap);
+
+    // --- Mobile keyboard handling ---
+    // When the on-screen keyboard opens on iOS/Android, the visual viewport
+    // shrinks but the layout viewport doesn't — which leaves the input
+    // hidden behind the keyboard. We listen for visual viewport changes and
+    // resize the drawer to fit the visible area.
+    function isMobileViewport() {
+      return window.matchMedia && window.matchMedia('(max-width:480px)').matches;
+    }
+    function updateMobileHeight() {
+      if (!isMobileViewport()) {
+        wrap.style.height = '';
+        return;
+      }
+      var vv = window.visualViewport;
+      if (vv) {
+        // Fit the drawer within the currently visible portion of the screen,
+        // capped at 75% so the underlying page is still peekable.
+        var visible = vv.height;
+        var desired = Math.min(visible * 0.75, visible - 0);
+        // When the keyboard is open, use the full visible area minus a small gap.
+        var keyboardOpen = (window.innerHeight - visible) > 150;
+        wrap.style.height = (keyboardOpen ? visible : desired) + 'px';
+      }
+    }
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateMobileHeight);
+      window.visualViewport.addEventListener('scroll', updateMobileHeight);
+    }
+    window.addEventListener('resize', updateMobileHeight);
 
     // --- Greeting bubble (shows once during first pulse) ---
     var greeting = document.createElement('div');
@@ -304,6 +334,7 @@
     function openChat() {
       wrap.classList.remove('nl-hidden');
       toggle.style.display = 'none';
+      updateMobileHeight();
       if (!chatOpened) {
         chatOpened = true;
         startTime = new Date().toISOString();
@@ -318,6 +349,7 @@
     function closeChat() {
       wrap.classList.add('nl-hidden');
       toggle.style.display = 'flex';
+      wrap.style.height = '';
     }
 
     function addMessage(role, text) {
