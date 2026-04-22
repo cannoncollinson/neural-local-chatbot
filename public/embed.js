@@ -44,9 +44,12 @@
   // selectors where possible to minimize collisions with the host page.
   var css = [
     '.nl-toggle,.nl-wrap,.nl-wrap *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}',
-    '.nl-toggle{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;z-index:2147483646;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.25);transition:transform .15s;background:#1a1a1a}',
+    '.nl-toggle{position:fixed;bottom:24px;right:24px;width:73px;height:73px;border-radius:50%;border:none;cursor:pointer;z-index:2147483646;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.25);transition:transform .15s;background:#1a1a1a}',
     '.nl-toggle:hover{transform:scale(1.07)}',
-    '.nl-toggle svg{width:22px;height:22px;fill:#f5f0e8}',
+    '.nl-toggle svg{width:29px;height:29px;fill:#f5f0e8}',
+    '.nl-toggle::before{content:"";position:absolute;inset:0;border-radius:50%;background:inherit;opacity:0;z-index:-1;pointer-events:none}',
+    '.nl-toggle.nl-pulsing::before{animation:nlPulseRing 1.5s ease-out infinite}',
+    '@keyframes nlPulseRing{0%{transform:scale(1);opacity:0.6}100%{transform:scale(1.6);opacity:0}}',
     '.nl-wrap{position:fixed;bottom:24px;right:24px;width:380px;height:560px;max-height:calc(100vh - 48px);border-radius:16px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.18);display:flex;flex-direction:column;background:#fff;z-index:2147483647;transition:opacity .2s,transform .2s}',
     '.nl-wrap.nl-hidden{opacity:0;pointer-events:none;transform:translateY(12px)}',
     '.nl-header{padding:14px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;background:#1a1a1a;color:#f5f0e8}',
@@ -191,6 +194,29 @@
 
     document.body.appendChild(toggle);
     document.body.appendChild(wrap);
+
+    // --- Pulse cycle: 5s pulse, 20s pause, repeat until user interacts ---
+    var pulseStopped = false;
+    var pulseStopTimeout;
+    var pulseInterval;
+
+    function startPulseCycle() {
+      if (pulseStopped) return;
+      toggle.classList.add('nl-pulsing');
+      pulseStopTimeout = setTimeout(function () {
+        toggle.classList.remove('nl-pulsing');
+      }, 5000);
+    }
+    function stopPulsingForever() {
+      pulseStopped = true;
+      toggle.classList.remove('nl-pulsing');
+      clearTimeout(pulseStopTimeout);
+      clearInterval(pulseInterval);
+    }
+    startPulseCycle();
+    pulseInterval = setInterval(startPulseCycle, 25000);
+    toggle.addEventListener('mouseenter', stopPulsingForever);
+    toggle.addEventListener('click', stopPulsingForever);
 
     var msgContainer = wrap.querySelector('.nl-messages');
     var input = wrap.querySelector('.nl-input');
